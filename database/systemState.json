@@ -6,9 +6,9 @@
         "i2cBoardAddr": 32,
         "name": "EV 1",
         "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "08:56",
-        "autoOffTime": "08:57"
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
     },
     "dev2": {
         "dev": "dev2",
@@ -17,9 +17,9 @@
         "i2cBoardAddr": 32,
         "name": "EV 2",
         "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "08:57",
-        "autoOffTime": "08:58"
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
     },
     "dev3": {
         "dev": "dev3",
@@ -28,9 +28,9 @@
         "i2cBoardAddr": 32,
         "name": "EV 3",
         "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "08:58",
-        "autoOffTime": "08:59"
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
     },
     "dev4": {
         "dev": "dev4",
@@ -39,9 +39,9 @@
         "i2cBoardAddr": 32,
         "name": "EV 4",
         "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "08:59",
-        "autoOffTime": "09:00"
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
     },
     "dev5": {
         "dev": "dev5",
@@ -50,9 +50,9 @@
         "i2cBoardAddr": 32,
         "name": "EV 5",
         "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "09:00",
-        "autoOffTime": "09:01"
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
     },
     "dev6": {
         "dev": "dev6",
@@ -61,9 +61,9 @@
         "i2cBoardAddr": 32,
         "name": "EV 6",
         "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "09:01",
-        "autoOffTime": "09:02"
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
     },
     "dev7": {
         "dev": "dev7",
@@ -72,9 +72,9 @@
         "i2cBoardAddr": 32,
         "name": "EV 7",
         "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "09:02",
-        "autoOffTime": "09:03"
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
     },
     "dev8": {
         "dev": "dev8",
@@ -83,35 +83,13 @@
         "i2cBoardAddr": 32,
         "name": "EV 8",
         "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "09:03",
-        "autoOffTime": "09:04"
-    },
-    "dev9": {
-        "dev": "dev9",
-        "relayID": "1",
-        "type": "i2c",
-        "i2cBoardAddr": 33,
-        "name": "EV 9",
-        "switchValue": 0,
-        "autoMode": 1,
-        "autoOnTime": "09:04",
-        "autoOffTime": "09:05"
-    },
-    "dev10": {
-        "dev": "dev10",
-        "relayID": "2",
-        "type": "i2c",
-        "i2cBoardAddr": 33,
-        "name": "EV 10",
-        "switchValue": 0,
         "autoMode": 0,
         "autoOnTime": "",
         "autoOffTime": ""
     },
-    "dev11": {
-        "dev": "dev11",
-        "relayID": "3",
+    "dev9": {
+        "dev": "dev9",
+        "relayID": "1",
         "type": "i2c",
         "i2cBoardAddr": 33,
         "name": "EV Principal",

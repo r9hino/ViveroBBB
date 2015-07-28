@@ -99,28 +99,6 @@ function loadSystemState(jsonFileName){
             "relayID":"1",
             "type": "i2c",
             "i2cBoardAddr": 0x21,
-            "name": "EV 9",
-            "switchValue": 0,
-            "autoMode": 0,
-            "autoOnTime":"",
-            "autoOffTime":""
-        },
-        "dev10": {
-            "dev": "dev10",
-            "relayID":"2",
-            "type": "i2c",
-            "i2cBoardAddr": 0x21,
-            "name": "EV 10",
-            "switchValue": 0,
-            "autoMode": 0,
-            "autoOnTime":"",
-            "autoOffTime":""
-        },
-        "dev11": {
-            "dev": "dev11",
-            "relayID":"3",
-            "type": "i2c",
-            "i2cBoardAddr": 0x21,
             "name": "EV Principal",
             "switchValue": 0,
             "autoMode": 0,
