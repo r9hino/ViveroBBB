@@ -27,7 +27,7 @@ app.set('view engine', 'ejs');
 app.use(compression());
 //app.use(minify({cache: __dirname + '/public/cache'}));
 app.use(favicon(__rootProject + '/public/images/favicon.ico'));
-app.use(logger('dev'));
+//app.use(logger('dev'));
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

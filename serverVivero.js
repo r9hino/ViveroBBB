@@ -59,7 +59,7 @@ var schedulerOffJob = [];
 // This is what is going to be executed when the cron time arrive.
 function jobAutoOn(dev){
     jsonSystemState[dev].switchValue = 1;
-    // Depend on device type (pin or xbee), a different function will control the device.
+    // Check if device type is i2c.
     if(jsonSystemState[dev].type === 'i2c'){
         I2C.changeRelayState(jsonSystemState[dev].i2cBoardAddr, jsonSystemState[dev].relayID, 'on', function(err, relayBoardState){
             if(err) return err;
@@ -77,7 +77,7 @@ function jobAutoOn(dev){
 // This is what is going to be executed when the cron time arrive.
 function jobAutoOff(dev){
     jsonSystemState[dev].switchValue = 0;
-    // Depend on device type (pin or xbee), a different function will control the device.
+    // Check if device type is i2c.
     if(jsonSystemState[dev].type === 'i2c'){
         I2C.changeRelayState(jsonSystemState[dev].i2cBoardAddr, jsonSystemState[dev].relayID, 'off', function(err, relayBoardState){
             if(err) return err;
@@ -229,10 +229,8 @@ async.series([
         initDevices(jsonSystemState, I2C);
         
         for(var dev in jsonSystemState){
-           
            var devState = jsonSystemState[dev];
-            // Start scheduler only if autoMode is 1 (true) and switch value is set to zero (off).
-            // Check that autoOnTime is not an empty string or undefined, otherwise server will stop working.
+
             if((devState.autoMode === 1) && (devState.autoOnTime !== "") && 
                (devState.autoOnTime !== undefined) && (devState.autoOnTime !== null)){
                 // Retrieve hours and minutes from client received data.
@@ -267,11 +265,10 @@ async.series([
             }
            
         }
-        
         callback(null);
     },
     function(callback){
-        var serverPort = 80;
+        var serverPort = 8888;
         server = app.listen(serverPort, function(error){
             if(error) return callback(error);
             console.log('Server listening on port ' + serverPort + '.');

@@ -11,20 +11,17 @@ $(document).on("pagecreate", function(){
     var guiActiveTime = 3*60*1000;  // Miliseconds.
     var timerTimeout = null;
 
-    var socket = io.connect('vivero.mooo.com:80',{
+    // Store URL of the address bar.
+    var barURL = document.location.href;
+    // Connect to the server based on the URL address.
+    // If local connection is available client can try to connect to 192.168.7.2:8888.
+    // If a remote connection is request, client can try to connect using vivero.mooo.com:8888.
+    var socket = io.connect(barURL,{
         forceNew: true,
         rememberUpgrade: true,
         transports: ['xhr-polling', 'websocket', 'flashsocket', 'polling']
     });
 
-    /*socket.on('connect_error',function(){
-        io.connect('192.168.7.2:8888',{
-            forceNew: true,
-            rememberUpgrade: true,
-            transports: ['xhr-polling', 'websocket', 'flashsocket', 'polling']
-        });
-    });
-    */
     console.time('connection');    
     // Each time client connects/reconnects, toggle grayed GUI.
     socket.on('connect',function(){
@@ -52,14 +49,17 @@ $(document).on("pagecreate", function(){
                     <label for="'+dev+'switch">'+name+'</label>\
                     <input type="checkbox" class="dynamic" name="'+dev+'" id="'+dev+'switch" data-role="flipswitch"/>\
                     <div class="horizontal-checkbox">\
-                        <label for="'+dev+'checkbox" class="inline">Auto</label>\
+                        <label for="'+dev+'checkbox">Auto</label>\
                         <input type="checkbox" class="dynamic" name="'+dev+'" id="'+dev+'checkbox" data-mini="true"/>\
                     </div>\
-                    <div class="horizontal-time">\
-                        <input type="time" class="dynamic inline" name="'+dev+'" id="'+dev+'ontime" value="" data-clear-btn="false"/>\
-                    </div>\
-                    <div class="horizontal-time">\
-                        <input type="time" class="dynamic inline" name="'+dev+'" id="'+dev+'offtime" value="" data-clear-btn="false"/>\
+                    <div  class="horizontal-time">\
+                        <div data-role="fieldcontain">\
+                            <label>On</label>\
+                            <input type="time" class="dynamic" name="'+dev+'" id="'+dev+'ontime" value="" data-clear-btn="false"/>\
+                            <br><br>\
+                            <label>Off</label>\
+                            <input type="time" class="dynamic" name="'+dev+'" id="'+dev+'offtime" value="" data-clear-btn="false"/>\
+                        </div>\
                     </div>\
                 </div>'
     			);
@@ -68,6 +68,35 @@ $(document).on("pagecreate", function(){
     		}
         });
     });
+    /*'<div class="ui-field-contain ui-responsive">\
+                    <fieldset data-type="horizontal">\
+        <legend>Horizontal controlgroup, mixed:</legend>\
+        <a href="#" class="ui-shadow ui-btn ui-corner-all ui-icon-arrow-r ui-btn-icon-right">Link</a>\
+        <button class="ui-shadow ui-btn ui-corner-all ui-icon-grid ui-btn-icon-notext">Button</button>\
+        <label for="select-v-1e">Select</label>\
+        <select name="select-v-1e" id="select-v-1e">\
+            <option value="#">One</option>\
+            <option value="#">Two</option>\
+            <option value="#">Three</option>\
+        </select>\
+    </fieldset>\
+                </div>'
+    '<div class="ui-field-contain ui-responsive">\
+                    <label for="'+dev+'switch">'+name+'</label>\
+                    <input type="checkbox" class="dynamic" name="'+dev+'" id="'+dev+'switch" data-role="flipswitch"/>\
+                    <div class="horizontal-checkbox">\
+                        <label for="'+dev+'checkbox">Auto</label>\
+                        <input type="checkbox" class="dynamic" name="'+dev+'" id="'+dev+'checkbox" data-mini="true"/>\
+                    </div>\
+                    <div class="horizontal-time inline">\
+                        <label>On</label>\
+                        <input type="time" class="dynamic" name="'+dev+'" id="'+dev+'ontime" value="" data-clear-btn="false"/>\
+                    </div>\
+                    <div class="horizontal-time">\
+                        <input type="time" class="dynamic" name="'+dev+'" id="'+dev+'offtime" value="" data-clear-btn="false"/>\
+                    </div>\
+                </div>'
+                */
 
     /* Send data to server.
         Use .on() method when working with dynamically created buttons.
