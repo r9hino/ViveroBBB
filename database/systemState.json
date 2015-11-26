@@ -1,0 +1,112 @@
+{
+    "dev1": {
+        "dev": "dev1",
+        "relayID": "1",
+        "type": "i2c",
+        "i2cBoardAddr": 32,
+        "name": "E1",
+        "switchValue": 0,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev2": {
+        "dev": "dev2",
+        "relayID": "2",
+        "type": "i2c",
+        "i2cBoardAddr": 32,
+        "name": "E2",
+        "switchValue": 0,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev3": {
+        "dev": "dev3",
+        "relayID": "3",
+        "type": "i2c",
+        "i2cBoardAddr": 32,
+        "name": "E3",
+        "switchValue": 0,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev4": {
+        "dev": "dev4",
+        "relayID": "4",
+        "type": "i2c",
+        "i2cBoardAddr": 32,
+        "name": "E4",
+        "switchValue": 0,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev5": {
+        "dev": "dev5",
+        "relayID": "5",
+        "type": "i2c",
+        "i2cBoardAddr": 32,
+        "name": "E5",
+        "switchValue": 0,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev6": {
+        "dev": "dev6",
+        "relayID": "6",
+        "type": "i2c",
+        "i2cBoardAddr": 32,
+        "name": "E6",
+        "switchValue": 0,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev7": {
+        "dev": "dev7",
+        "relayID": "7",
+        "type": "i2c",
+        "i2cBoardAddr": 32,
+        "name": "E7",
+        "switchValue": 0,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev8": {
+        "dev": "dev8",
+        "relayID": "8",
+        "type": "i2c",
+        "i2cBoardAddr": 32,
+        "name": "E8",
+        "switchValue": 0,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev9": {
+        "dev": "dev9",
+        "relayID": "1",
+        "type": "i2c",
+        "i2cBoardAddr": 33,
+        "name": "E9",
+        "switchValue": 1,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    },
+    "dev10": {
+        "dev": "dev10",
+        "relayID": "2",
+        "type": "i2c",
+        "i2cBoardAddr": 33,
+        "name": "E10",
+        "switchValue": 1,
+        "autoMode": 0,
+        "autoOnTime": "",
+        "autoOffTime": ""
+    }
+}
