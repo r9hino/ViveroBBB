@@ -62,7 +62,7 @@ async.series([
         callback(null);
     },
     function(callback){
-        var serverPort = 8888;
+        var serverPort = 80;
         server = app.listen(serverPort, function(error){
             if(error) return callback(error);
             console.log('Server listening on port ' + serverPort + '.');

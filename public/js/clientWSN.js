@@ -11,12 +11,20 @@ $(document).on("pagecreate", function(){
     var guiActiveTime = 3*60*1000;  // Miliseconds.
     var timerTimeout = null;
 
-    var socket = io.connect('vivero.mooo.com:8888',{
+    var socket = io.connect('vivero.mooo.com:80',{
         forceNew: true,
         rememberUpgrade: true,
         transports: ['xhr-polling', 'websocket', 'flashsocket', 'polling']
     });
 
+    /*socket.on('connect_error',function(){
+        io.connect('192.168.7.2:8888',{
+            forceNew: true,
+            rememberUpgrade: true,
+            transports: ['xhr-polling', 'websocket', 'flashsocket', 'polling']
+        });
+    });
+    */
     console.time('connection');    
     // Each time client connects/reconnects, toggle grayed GUI.
     socket.on('connect',function(){
