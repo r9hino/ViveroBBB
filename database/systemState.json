@@ -7,8 +7,8 @@
         "name": "E1",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "15:50",
-        "autoOffTime": "15:51"
+        "autoOnTime": "16:55",
+        "autoOffTime": "16:56"
     },
     "dev2": {
         "dev": "dev2",
@@ -16,10 +16,10 @@
         "type": "i2c",
         "i2cBoardAddr": 32,
         "name": "E2",
-        "switchValue": 0,
+        "switchValue": 1,
         "autoMode": 1,
-        "autoOnTime": "15:51",
-        "autoOffTime": "15:52"
+        "autoOnTime": "16:56",
+        "autoOffTime": "16:57"
     },
     "dev3": {
         "dev": "dev3",
@@ -29,8 +29,8 @@
         "name": "E3",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "15:52",
-        "autoOffTime": "15:53"
+        "autoOnTime": "16:57",
+        "autoOffTime": "16:58"
     },
     "dev4": {
         "dev": "dev4",
@@ -40,8 +40,8 @@
         "name": "E4",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "15:53",
-        "autoOffTime": "15:54"
+        "autoOnTime": "16:58",
+        "autoOffTime": "16:59"
     },
     "dev5": {
         "dev": "dev5",
@@ -51,8 +51,8 @@
         "name": "E5",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "15:54",
-        "autoOffTime": "15:55"
+        "autoOnTime": "16:59",
+        "autoOffTime": "17:00"
     },
     "dev6": {
         "dev": "dev6",

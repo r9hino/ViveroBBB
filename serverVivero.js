@@ -47,45 +47,6 @@ var I2C = new i2cModule(i2cBus);
 
 
 //******************************************************************************
-// Passport, Express and Routes configuration
-var app = require('./app_routes/app');
-
-var server; // server = app.listen(8888);
-var io;     // io = require('socket.io')(server);
-
-// Second: Initialize all devices in the network to the preview state.
-// Third: Initiliaze http server.
-// Fourth: Initialize socket.io.
-async.series([
-    function(callback){
-        initDevices(jsonSystemState, I2C);
-        callback(null);
-    },
-    function(callback){
-        var serverPort = 80;
-        server = app.listen(serverPort, function(error){
-            if(error) return callback(error);
-            console.log('Server listening on port ' + serverPort + '.');
-            callback(null);
-        });
-    },
-    function(callback){
-        io = require('socket.io')(server, {
-            pingInterval: 7000,
-            pingTimeout: 16000,
-            transports: ['polling', 'websocket', 'flashsocket', 'xhr-polling']
-        });
-        io.on('connection', socketConnection);
-        console.log("Socket.io is ready.");
-        callback(null);
-    }],
-    function(err){ //This function gets called after all tasks has called its callback functions.
-        if(err) return console.error(err);
-        console.log('System initialization using async series is complete.');
-    }
-);
-
-//******************************************************************************
 // Scheduler objects initialization and function job definition.
 var schedulerOnJob = [];
 var schedulerOffJob = [];
@@ -253,3 +214,82 @@ function socketConnection(socket){
 }           // End function socketConnection().
 
 
+//******************************************************************************
+// Passport, Express and Routes configuration
+var app = require('./app_routes/app');
+
+var server; // server = app.listen(8888);
+var io;     // io = require('socket.io')(server);
+
+// Second: Initialize all devices in the network to the preview state.
+// Third: Initiliaze http server.
+// Fourth: Initialize socket.io.
+async.series([
+    function(callback){
+        initDevices(jsonSystemState, I2C);
+        
+        for(var dev in jsonSystemState){
+           
+           var devState = jsonSystemState[dev];
+            // Start scheduler only if autoMode is 1 (true) and switch value is set to zero (off).
+            // Check that autoOnTime is not an empty string or undefined, otherwise server will stop working.
+            if((devState.autoMode === 1) && (devState.autoOnTime !== "") && 
+               (devState.autoOnTime !== undefined) && (devState.autoOnTime !== null)){
+                // Retrieve hours and minutes from client received data.
+                var autoOnTimeSplit = devState.autoOnTime.split(":");
+                // First convert to integer: "02" -> 2. Then convert to string again: 2 -> "2".
+                var hourStr = parseInt(autoOnTimeSplit[0], 10).toString();
+                var minuteStr = parseInt(autoOnTimeSplit[1], 10).toString();
+    
+                // Set new scheduler values.
+                var onCronTime = new cronTime('0 ' + minuteStr + ' ' + hourStr + ' * * *', null);
+                schedulerOnJob[dev].setTime(onCronTime);
+                // .setCallback is a custom function added by me to the cron lib.
+                schedulerOnJob[dev].setCallback(jobAutoOn.bind(this, dev));   // Set job/function to be execute on cron tick.
+                schedulerOnJob[dev].start();
+                console.log("Set Auto On to: " + devState.autoOnTime + ":00" + "  " + devState.name);
+            }
+            if((devState.autoMode === 1) && (devState.autoOffTime !== "") && 
+               (devState.autoOffTime !== undefined) && (devState.autoOffTime !== null)){
+                // Retrieve hours and minutes from client received data.
+                var autoOffTimeSplit = devState.autoOffTime.split(":");
+                // First convert to integer: "02" -> 2. Then convert to string again: 2 -> "2".
+                var hourStr = parseInt(autoOffTimeSplit[0], 10).toString();
+                var minuteStr = parseInt(autoOffTimeSplit[1], 10).toString();
+    
+                // Set new scheduler values.
+                var offCronTime = new cronTime('0 ' + minuteStr + ' ' + hourStr + ' * * *', null);
+                schedulerOffJob[dev].setTime(offCronTime);
+                // .setCallback is a custom function added by me to the cron lib.
+                schedulerOffJob[dev].setCallback(jobAutoOff.bind(this, dev));   // Set job/function to be execute on cron tick.
+                schedulerOffJob[dev].start();
+                console.log("Set Auto Off to: " + devState.autoOffTime + ":00" + "  " + devState.name);
+            }
+           
+        }
+        
+        callback(null);
+    },
+    function(callback){
+        var serverPort = 80;
+        server = app.listen(serverPort, function(error){
+            if(error) return callback(error);
+            console.log('Server listening on port ' + serverPort + '.');
+            callback(null);
+        });
+    },
+    function(callback){
+        io = require('socket.io')(server, {
+            pingInterval: 7000,
+            pingTimeout: 16000,
+            transports: ['polling', 'websocket', 'flashsocket', 'xhr-polling']
+        });
+        io.on('connection', socketConnection);
+        console.log("Socket.io is ready.");
+        callback(null);
+    }],
+    function(err){ //This function gets called after all tasks has called its callback functions.
+        if(err) return console.error(err);
+        console.log('System initialization using async series is complete.');
+    }
+);
