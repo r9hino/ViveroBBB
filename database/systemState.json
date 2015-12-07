@@ -40,7 +40,7 @@
         "name": "EV 4",
         "switchValue": 0,
         "autoMode": 0,
-        "autoOnTime": "",
+        "autoOnTime": "00:59",
         "autoOffTime": ""
     },
     "dev5": {

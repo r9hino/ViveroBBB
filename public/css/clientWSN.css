@@ -3,17 +3,24 @@
 
 
 /* Control Panel css ---------------------------------------------------------*/
+.device-label {
+    position: relative;
+    float: left;
+    top: -5px;
+    width: 40px;
+}
+
 .horizontal-checkbox {
     position: relative;
     float: left;
-    margin-left: 4%;
-    top: -8px;
+    margin-left: 1%;
+    top: -10px;
 }
 
 .horizontal-time {
     position: relative;
     float: left;
-    margin-left: 3%;
+    margin-left: 1%;
     width: 155px;
     height: 85px;
     top: -40px;

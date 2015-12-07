@@ -46,8 +46,8 @@ $(document).on("pagecreate", function(){
     		    // Create buttons based on the system state.
     		    $controlPanel.append(
                 '<div class="ui-field-contain ui-responsive">\
-                    <label for="'+dev+'switch">'+name+'</label>\
-                    <input type="checkbox" class="dynamic" name="'+dev+'" id="'+dev+'switch" data-role="flipswitch"/>\
+                    <label class="device-label" for="'+dev+'switch">'+name+'</label>\
+                    <input type="checkbox" class="dynamic" name="'+dev+'" id="'+dev+'switch" data-role="flipswitch" data-mini="true"/>\
                     <div class="horizontal-checkbox">\
                         <label for="'+dev+'checkbox">Auto</label>\
                         <input type="checkbox" class="dynamic" name="'+dev+'" id="'+dev+'checkbox" data-mini="true"/>\

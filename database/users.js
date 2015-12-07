@@ -5,7 +5,7 @@ var exports = module.exports = {};
 
 // Users definition for system loggin.
 var users = [
-    { id: 0, username: 'guest', password: '1234'}
+    { id: 0, username: 'vivero', password: 'crazycow'}
 ];
 
 // Find user by ID.
