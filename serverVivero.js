@@ -45,6 +45,15 @@ var jsonSystemState = loadSystemState(jsonFileName);    // Load to memory system
 var i2cModule = require('./lib/i2cModule');
 var I2C = new i2cModule(i2cBus);
 
+//******************************************************************************
+// Async queue manager for changing relay's states and avoid two instruction executing at the same time.
+var changeRelayStateQueue = async.queue(function(task, next){
+    I2C.changeRelayState(task.i2cBoardAddr, task.relayID, task.state, function(err, relayBoardState){
+        if(err) return console.log(err);
+        //console.log("New relay board state is: " + relayBoardState.toString(2));
+        return next();    
+    });
+}, 1);
 
 //******************************************************************************
 // Scheduler objects initialization and function job definition.
@@ -61,10 +70,19 @@ function jobAutoOn(dev){
     jsonSystemState[dev].switchValue = 1;
     // Check if device type is i2c.
     if(jsonSystemState[dev].type === 'i2c'){
-        I2C.changeRelayState(jsonSystemState[dev].i2cBoardAddr, jsonSystemState[dev].relayID, 'on', function(err, relayBoardState){
-            if(err) return err;
+        var i2CFunctionData = {
+                i2cBoardAddr: jsonSystemState[dev].i2cBoardAddr, 
+                relayID: jsonSystemState[dev].relayID, 
+                state: 'on'};
+        changeRelayStateQueue.push(i2CFunctionData, function(err){
+            if(err) return console.log(err);
+            console.log(timelib.timeNow() + ' ' + jsonSystemState[dev].name + ' turned on.');
             //console.log("New relay board state is: " + relayBoardState.toString(2));
         });
+        //I2C.changeRelayState(jsonSystemState[dev].i2cBoardAddr, jsonSystemState[dev].relayID, 'on', function(err, relayBoardState){
+        //    if(err) return err;
+            //console.log("New relay board state is: " + relayBoardState.toString(2));
+        //});
     }
     
     console.log(timelib.timeNow() + '  Automatic on: ' + jsonSystemState[dev].name);
@@ -79,10 +97,20 @@ function jobAutoOff(dev){
     jsonSystemState[dev].switchValue = 0;
     // Check if device type is i2c.
     if(jsonSystemState[dev].type === 'i2c'){
-        I2C.changeRelayState(jsonSystemState[dev].i2cBoardAddr, jsonSystemState[dev].relayID, 'off', function(err, relayBoardState){
-            if(err) return err;
+        var i2CFunctionData = {
+                i2cBoardAddr: jsonSystemState[dev].i2cBoardAddr, 
+                relayID: jsonSystemState[dev].relayID, 
+                state: 'off'};
+        changeRelayStateQueue.push(i2CFunctionData, function(err){
+            if(err) return console.log(err);
+            console.log(timelib.timeNow() + ' ' + jsonSystemState[dev].name + ' turned off.');
             //console.log("New relay board state is: " + relayBoardState.toString(2));
         });
+        
+        //I2C.changeRelayState(jsonSystemState[dev].i2cBoardAddr, jsonSystemState[dev].relayID, 'off', function(err, relayBoardState){
+        //    if(err) return err;
+            //console.log("New relay board state is: " + relayBoardState.toString(2));
+        //});
     }
     
     console.log(timelib.timeNow() + '  Automatic off: ' + jsonSystemState[dev].name);
@@ -137,19 +165,25 @@ function socketConnection(socket){
 
         // Update system state. Only the properties that changed with respect to preview state will be modified.
         if(newDevState.type === 'i2c'){
-            if((newDevState.switchValue === 1) && (newDevState.switchValue !== prevDevState.switchValue)){
-                I2C.changeRelayState(newDevState.i2cBoardAddr, newDevState.relayID, 'on', function(err, relayBoardState){
-                    if(err) return err;
+            if((newDevState.switchValue !== prevDevState.switchValue)){
+                var switchState = newDevState.switchValue === 1 ? 'on' : 'off';
+                var i2CFunctionData = {
+                    i2cBoardAddr: newDevState.i2cBoardAddr, 
+                    relayID: newDevState.relayID, 
+                    state: switchState
+                };
+                changeRelayStateQueue.push(i2CFunctionData, function(err){
+                    if(err) return console.log(err);
+                    console.log(timelib.timeNow() + ' ' + newDevState.name + ' turned ' + switchState + '.');
                     //console.log("New relay board state is: " + relayBoardState.toString(2));
                 });
-            }
-            if((newDevState.switchValue === 0) && (newDevState.switchValue !== prevDevState.switchValue)){
-                I2C.changeRelayState(newDevState.i2cBoardAddr, newDevState.relayID, 'off', function(err, relayBoardState){
-                    if(err) return err;
+                
+                /*I2C.changeRelayState(newDevState.i2cBoardAddr, newDevState.relayID, switchState, function(err, relayBoardState){
+                    if(err) console.log(err);
                     //console.log("New relay board state is: " + relayBoardState.toString(2));
-                });
+                });*/
             }
-        }        
+        }
 
         console.log(timelib.timeNow() + "  Name: " + newDevState.name + 
                     ",  Switch value: " + newDevState.switchValue +
@@ -165,44 +199,51 @@ function socketConnection(socket){
 
         // Start scheduler only if autoMode is 1 (true) and switch value is set to zero (off).
         // Check that autoOnTime is not an empty string or undefined, otherwise server will stop working.
-        if((newDevState.autoMode === 1) && (newDevState.autoOnTime !== "") && 
-           (newDevState.autoOnTime !== undefined) && (newDevState.autoOnTime !== null) && 
-           (newDevState.autoOnTime !== prevDevState.autoOnTime)){
-            // Retrieve hours and minutes from client received data.
-            var autoOnTimeSplit = newDevState.autoOnTime.split(":");
-            // First convert to integer: "02" -> 2. Then convert to string again: 2 -> "2".
-            var hourStr = parseInt(autoOnTimeSplit[0], 10).toString();
-            var minuteStr = parseInt(autoOnTimeSplit[1], 10).toString();
-
-            // Set new scheduler values.
-            var onCronTime = new cronTime('0 ' + minuteStr + ' ' + hourStr + ' * * *', null);
-            schedulerOnJob[dev].setTime(onCronTime);
-            // .setCallback is a custom function added by me to the cron lib.
-            schedulerOnJob[dev].setCallback(jobAutoOn.bind(this, dev));   // Set job/function to be execute on cron tick.
-            schedulerOnJob[dev].start();
-            console.log("Set Auto On to: " + newDevState.autoOnTime + ":00" + "  " + newDevState.name);
-            //console.log("Set Auto On to: " + schedulerOnJob[dev].nextDate() + "  " + newDevState.name);
+        if(newDevState.autoMode === 1){
+            if((newDevState.autoOnTime !== prevDevState.autoOnTime) || (newDevState.autoMode !== prevDevState.autoMode)){
+                if((newDevState.autoOnTime !== "") && (newDevState.autoOnTime !== undefined) && (newDevState.autoOnTime !== null)){
+                    // Retrieve hours and minutes from client received data.
+                    var autoOnTimeSplit = newDevState.autoOnTime.split(":");
+                    // First convert to integer: "02" -> 2. Then convert to string again: 2 -> "2".
+                    var hourStr = parseInt(autoOnTimeSplit[0], 10).toString();
+                    var minuteStr = parseInt(autoOnTimeSplit[1], 10).toString();
+        
+                    // Set new scheduler values.
+                    var onCronTime = new cronTime('0 ' + minuteStr + ' ' + hourStr + ' * * *', null);
+                    schedulerOnJob[dev].setTime(onCronTime);
+                    // .setCallback is a custom function added by me to the cron lib.
+                    schedulerOnJob[dev].setCallback(jobAutoOn.bind(this, dev));   // Set job/function to be execute on cron tick.
+                    schedulerOnJob[dev].start();
+                    console.log(timelib.timeNow() + ' Set Auto On to: ' + newDevState.autoOnTime + ':00' + '  ' + newDevState.name);
+                }
+            }
+            if((newDevState.autoOffTime !== prevDevState.autoOffTime) || (newDevState.autoMode !== prevDevState.autoMode)){
+                if((newDevState.autoOffTime !== "") && (newDevState.autoOffTime !== undefined) && (newDevState.autoOffTime !== null)){
+                    // Retrieve hours and minutes from client received data.
+                    var autoOffTimeSplit = newDevState.autoOffTime.split(":");
+                    // First convert to integer: "02" -> 2. Then convert to string again: 2 -> "2".
+                    var hourStr = parseInt(autoOffTimeSplit[0], 10).toString();
+                    var minuteStr = parseInt(autoOffTimeSplit[1], 10).toString();
+        
+                    // Set new scheduler values.
+                    var offCronTime = new cronTime('0 ' + minuteStr + ' ' + hourStr + ' * * *', null);
+                    schedulerOffJob[dev].setTime(offCronTime);
+                    // .setCallback is a custom function added by me to the cron lib.
+                    schedulerOffJob[dev].setCallback(jobAutoOff.bind(this, dev));   // Set job/function to be execute on cron tick.
+                    schedulerOffJob[dev].start();
+                    console.log(timelib.timeNow() + ' Set Auto Off to: ' + newDevState.autoOffTime + ':00' + '  ' + newDevState.name);
+                }
+            }
         }
-        if((newDevState.autoMode === 1) && (newDevState.autoOffTime !== "") && 
-           (newDevState.autoOffTime !== undefined) && (newDevState.autoOffTime !== null) && 
-           (newDevState.autoOffTime !== prevDevState.autoOffTime)){
-            // Retrieve hours and minutes from client received data.
-            var autoOffTimeSplit = newDevState.autoOffTime.split(":");
-            // First convert to integer: "02" -> 2. Then convert to string again: 2 -> "2".
-            var hourStr = parseInt(autoOffTimeSplit[0], 10).toString();
-            var minuteStr = parseInt(autoOffTimeSplit[1], 10).toString();
-
-            // Set new scheduler values.
-            var offCronTime = new cronTime('0 ' + minuteStr + ' ' + hourStr + ' * * *', null);
-            schedulerOffJob[dev].setTime(offCronTime);
-            // .setCallback is a custom function added by me to the cron lib.
-            schedulerOffJob[dev].setCallback(jobAutoOff.bind(this, dev));   // Set job/function to be execute on cron tick.
-            schedulerOffJob[dev].start();
-            console.log("Set Auto Off to: " + newDevState.autoOffTime + ":00" + "  " + newDevState.name);
-            //console.log("Set Auto On to: " + schedulerJob[dev].nextDate() + "  " + newDevState.name);
+        // If auto mode is off.
+        else{
+            // Enter only if new value of autoMode is different from the previews one.
+            if(newDevState.autoMode !== prevDevState.autoMode){
+                if(schedulerOnJob[dev] instanceof cronJob) schedulerOnJob[dev].stop();
+                if(schedulerOffJob[dev] instanceof cronJob) schedulerOffJob[dev].stop();
+            }
         }
-        //else if(schedulerJob[dev] instanceof cronJob) schedulerJob[dev].stop();
-
+        
         var tic = new Date();
         fs.writeFile(jsonFileName, JSON.stringify(jsonSystemState, null, 4), function (err) {
             if(err) console.log(err);
@@ -221,9 +262,9 @@ var app = require('./app_routes/app');
 var server; // server = app.listen(8888);
 var io;     // io = require('socket.io')(server);
 
-// Second: Initialize all devices in the network to the preview state.
-// Third: Initiliaze http server.
-// Fourth: Initialize socket.io.
+// First: Initialize all devices in the network to the preview state.
+// Second: Initiliaze http server.
+// Third: Initialize socket.io.
 async.series([
     function(callback){
         initDevices(jsonSystemState, I2C);
@@ -245,7 +286,7 @@ async.series([
                 // .setCallback is a custom function added by me to the cron lib.
                 schedulerOnJob[dev].setCallback(jobAutoOn.bind(this, dev));   // Set job/function to be execute on cron tick.
                 schedulerOnJob[dev].start();
-                console.log("Set Auto On to: " + devState.autoOnTime + ":00" + "  " + devState.name);
+                console.log(timelib.timeNow() + ' Set Auto On to: ' + devState.autoOnTime + ':00' + '  ' + devState.name);
             }
             if((devState.autoMode === 1) && (devState.autoOffTime !== "") && 
                (devState.autoOffTime !== undefined) && (devState.autoOffTime !== null)){
@@ -261,7 +302,7 @@ async.series([
                 // .setCallback is a custom function added by me to the cron lib.
                 schedulerOffJob[dev].setCallback(jobAutoOff.bind(this, dev));   // Set job/function to be execute on cron tick.
                 schedulerOffJob[dev].start();
-                console.log("Set Auto Off to: " + devState.autoOffTime + ":00" + "  " + devState.name);
+                console.log(timelib.timeNow() + ' Set Auto Off to: ' + devState.autoOffTime + ':00' + '  ' + devState.name);
             }
            
         }
@@ -271,7 +312,7 @@ async.series([
         var serverPort = 8888;
         server = app.listen(serverPort, function(error){
             if(error) return callback(error);
-            console.log('Server listening on port ' + serverPort + '.');
+            console.log(timelib.timeNow() + ' Server listening on port ' + serverPort + '.');
             callback(null);
         });
     },
@@ -282,11 +323,11 @@ async.series([
             transports: ['polling', 'websocket', 'flashsocket', 'xhr-polling']
         });
         io.on('connection', socketConnection);
-        console.log("Socket.io is ready.");
+        console.log(timelib.timeNow() + ' Socket.io is ready.');
         callback(null);
     }],
     function(err){ //This function gets called after all tasks has called its callback functions.
         if(err) return console.error(err);
-        console.log('System initialization using async series is complete.');
+        console.log(timelib.timeNow() + ' System initialization using async series is complete.');
     }
 );
