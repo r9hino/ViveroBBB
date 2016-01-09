@@ -76,16 +76,11 @@ function jobAutoOn(dev){
                 state: 'on'};
         changeRelayStateQueue.push(i2CFunctionData, function(err){
             if(err) return console.log(err);
-            console.log(timelib.timeNow() + ' ' + jsonSystemState[dev].name + ' turned on.');
+            console.log(timelib.timeNow() + ' Automatic on: ' + jsonSystemState[dev].name);
             //console.log("New relay board state is: " + relayBoardState.toString(2));
         });
-        //I2C.changeRelayState(jsonSystemState[dev].i2cBoardAddr, jsonSystemState[dev].relayID, 'on', function(err, relayBoardState){
-        //    if(err) return err;
-            //console.log("New relay board state is: " + relayBoardState.toString(2));
-        //});
     }
     
-    console.log(timelib.timeNow() + '  Automatic on: ' + jsonSystemState[dev].name);
     io.sockets.emit('updateClients', jsonSystemState[dev]);
     // Store new values into json file systemState.json
     fs.writeFile(jsonFileName, JSON.stringify(jsonSystemState, null, 4), function(err){
@@ -103,17 +98,11 @@ function jobAutoOff(dev){
                 state: 'off'};
         changeRelayStateQueue.push(i2CFunctionData, function(err){
             if(err) return console.log(err);
-            console.log(timelib.timeNow() + ' ' + jsonSystemState[dev].name + ' turned off.');
+            console.log(timelib.timeNow() + ' Automatic off: ' + jsonSystemState[dev].name);
             //console.log("New relay board state is: " + relayBoardState.toString(2));
         });
-        
-        //I2C.changeRelayState(jsonSystemState[dev].i2cBoardAddr, jsonSystemState[dev].relayID, 'off', function(err, relayBoardState){
-        //    if(err) return err;
-            //console.log("New relay board state is: " + relayBoardState.toString(2));
-        //});
     }
     
-    console.log(timelib.timeNow() + '  Automatic off: ' + jsonSystemState[dev].name);
     io.sockets.emit('updateClients', jsonSystemState[dev]);
     // Store new values into json file systemState.json
     fs.writeFile(jsonFileName, JSON.stringify(jsonSystemState, null, 4), function(err){
