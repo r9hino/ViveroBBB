@@ -45,15 +45,38 @@ var jsonSystemState = loadSystemState(jsonFileName);    // Load to memory system
 var i2cModule = require('./lib/i2cModule');
 var I2C = new i2cModule(i2cBus);
 
+// Define I2C board state based on its addresses. Initialize ass zero.
+var i2cBoardState = {
+    32: 0,
+    33: 0
+};
+
 //******************************************************************************
 // Async queue manager for changing relay's states and avoid two instruction executing at the same time.
 var changeRelayStateQueue = async.queue(function(task, next){
-    I2C.changeRelayState(task.i2cBoardAddr, task.relayID, task.state, function(err, relayBoardState){
+    I2C.changeRelayState(task.i2cBoardAddr, task.i2cBoardState, function(err){
         if(err) return console.log(err);
         //console.log("New relay board state is: " + relayBoardState.toString(2));
         return next();    
     });
 }, 1);
+
+//******************************************************************************
+// Retrieve relay board state based on systemState.json file. Board address is required.
+// Output example: 0b11010001
+function getRelayBoardState(i2cBoardAddr){
+    var relayBoardState = 0;
+    for(var dev in jsonSystemState){
+        if(jsonSystemState[dev].i2cBoardAddr === i2cBoardAddr){
+            var relayID = jsonSystemState[dev].relayID;
+            var switchValue = jsonSystemState[dev].switchValue;
+            relayBoardState = relayBoardState | (switchValue << (relayID-1));
+        }
+    }
+    console.log("getRelayBoardState - I2C board " + i2cBoardAddr + " State is: " + relayBoardState.toString(2));
+    return relayBoardState;
+}
+
 
 //******************************************************************************
 // Scheduler objects initialization and function job definition.
@@ -67,20 +90,22 @@ var schedulerOffJob = [];
 })();
 // This is what is going to be executed when the cron time arrive.
 function jobAutoOn(dev){
+    var boardAddr = jsonSystemState[dev].i2cBoardAddr;
     jsonSystemState[dev].switchValue = 1;
-    // Check if device type is i2c.
-    if(jsonSystemState[dev].type === 'i2c'){
-        var i2CFunctionData = {
-                i2cBoardAddr: jsonSystemState[dev].i2cBoardAddr, 
-                relayID: jsonSystemState[dev].relayID, 
-                state: 'on'};
-        changeRelayStateQueue.push(i2CFunctionData, function(err){
-            if(err) return console.log(err);
-            console.log(timelib.timeNow() + ' Automatic on: ' + jsonSystemState[dev].name);
-            //console.log("New relay board state is: " + relayBoardState.toString(2));
-        });
-    }
     
+    var relayMask = 1<<(jsonSystemState[dev].relayID-1);
+    i2cBoardState[boardAddr] = i2cBoardState[boardAddr] | relayMask;
+    
+    var i2CFunctionData = {
+        i2cBoardAddr: boardAddr, 
+        i2cBoardState: i2cBoardState[boardAddr],
+    };
+    changeRelayStateQueue.push(i2CFunctionData, function(err){
+        if(err) return console.log(err);
+        console.log(timelib.timeNow() + ' Automatic on: ' + jsonSystemState[dev].name);
+        //console.log("New relay board state is: " + relayBoardState.toString(2));
+    });
+
     io.sockets.emit('updateClients', jsonSystemState[dev]);
     // Store new values into json file systemState.json
     fs.writeFile(jsonFileName, JSON.stringify(jsonSystemState, null, 4), function(err){
@@ -89,19 +114,21 @@ function jobAutoOn(dev){
 }
 // This is what is going to be executed when the cron time arrive.
 function jobAutoOff(dev){
+    var boardAddr = jsonSystemState[dev].i2cBoardAddr;
     jsonSystemState[dev].switchValue = 0;
-    // Check if device type is i2c.
-    if(jsonSystemState[dev].type === 'i2c'){
-        var i2CFunctionData = {
-                i2cBoardAddr: jsonSystemState[dev].i2cBoardAddr, 
-                relayID: jsonSystemState[dev].relayID, 
-                state: 'off'};
-        changeRelayStateQueue.push(i2CFunctionData, function(err){
-            if(err) return console.log(err);
-            console.log(timelib.timeNow() + ' Automatic off: ' + jsonSystemState[dev].name);
-            //console.log("New relay board state is: " + relayBoardState.toString(2));
-        });
-    }
+    
+    var relayMask = 1<<(jsonSystemState[dev].relayID-1);
+    i2cBoardState[boardAddr] = i2cBoardState[boardAddr] & (~relayMask);
+    
+    var i2CFunctionData = {
+            i2cBoardAddr: boardAddr, 
+            i2cBoardState: i2cBoardState[boardAddr],
+    };
+    changeRelayStateQueue.push(i2CFunctionData, function(err){
+        if(err) return console.log(err);
+        console.log(timelib.timeNow() + ' Automatic off: ' + jsonSystemState[dev].name);
+        //console.log("New relay board state is: " + relayBoardState.toString(2));
+    });
     
     io.sockets.emit('updateClients', jsonSystemState[dev]);
     // Store new values into json file systemState.json
@@ -153,25 +180,50 @@ function socketConnection(socket){
         var newDevState = jsonSystemState[dev];
 
         // Update system state. Only the properties that changed with respect to preview state will be modified.
-        if(newDevState.type === 'i2c'){
-            if((newDevState.switchValue !== prevDevState.switchValue)){
-                var switchState = newDevState.switchValue === 1 ? 'on' : 'off';
-                var i2CFunctionData = {
-                    i2cBoardAddr: newDevState.i2cBoardAddr, 
-                    relayID: newDevState.relayID, 
-                    state: switchState
-                };
-                changeRelayStateQueue.push(i2CFunctionData, function(err){
-                    if(err) return console.log(err);
-                    console.log(timelib.timeNow() + ' ' + newDevState.name + ' turned ' + switchState + '.');
-                    //console.log("New relay board state is: " + relayBoardState.toString(2));
-                });
-                
-                /*I2C.changeRelayState(newDevState.i2cBoardAddr, newDevState.relayID, switchState, function(err, relayBoardState){
-                    if(err) console.log(err);
-                    //console.log("New relay board state is: " + relayBoardState.toString(2));
-                });*/
-            }
+        if((newDevState.switchValue !== prevDevState.switchValue)){
+            var relayID = jsonSystemState[dev].relayID;
+            var switchState = jsonSystemState[dev].switchValue === 1 ? 'on' : 'off';
+            var boardAddr = jsonSystemState[dev].i2cBoardAddr;
+
+            var relayMask = 1<<(relayID-1);
+            if(switchState === 'on')    i2cBoardState[boardAddr] = i2cBoardState[boardAddr] | relayMask;
+            else    i2cBoardState[boardAddr] = i2cBoardState[boardAddr] & (~relayMask);
+
+            var i2CFunctionData = {
+                i2cBoardAddr: boardAddr, 
+                i2cBoardState: i2cBoardState[boardAddr],
+            };
+            /*changeRelayStateQueue.push(i2CFunctionData, function(err){
+                if(err) return console.log(err);
+                console.log(timelib.timeNow() + ' ' + newDevState.name + ' turned ' + switchState + '.');
+                //console.log("New relay board state is: " + relayBoardState.toString(2));
+            });*/
+            
+            
+            /*async.waterfall([
+                function(callback){
+                    var i2cBoardState = getRelayBoardState(boardAddr);
+                    callback(null, i2cBoardState);
+                },
+                function(i2cBoardState, callback) {
+                    I2C.changeRelayState(boardAddr, i2cBoardState, function(err){
+                        if(err) return console.log(err);
+                        //console.log("New relay board state is: " + relayBoardState.toString(2));
+                    });
+                    callback(null, 'Done');
+                }],
+                function (err, result) {
+                // result now equals 'done'
+                }
+            );*/
+            
+            I2C.changeRelayState(boardAddr, i2cBoardState[boardAddr], function(err){
+                if(err){
+                    console.log('Error sending byte: ' + err);
+                    return;
+                }
+                //console.log("New relay board state is: " + relayBoardState.toString(2));
+            });
         }
 
         console.log(timelib.timeNow() + "  Name: " + newDevState.name + 
@@ -256,7 +308,10 @@ var io;     // io = require('socket.io')(server);
 // Third: Initialize socket.io.
 async.series([
     function(callback){
-        initDevices(jsonSystemState, I2C);
+        i2cBoardState[32] = getRelayBoardState(32);
+        i2cBoardState[33] = getRelayBoardState(33);
+        initDevices(32, i2cBoardState[32], I2C);
+        initDevices(33, i2cBoardState[33], I2C);
         
         for(var dev in jsonSystemState){
            var devState = jsonSystemState[dev];
