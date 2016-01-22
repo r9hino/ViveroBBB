@@ -31,9 +31,6 @@ var timelib = require('./lib/timelib');
 // I2C driver.
 var i2cBus = require('i2c-bus');
 
-// Allow to initialize devices to the preview system state.
-var initDevices = require('./lib/initDevices');
-
 // Load preview system state.
 var jsonFileName = __dirname + '/database/systemState.json';    // File name where is stored json system state.
 var loadSystemState = require('./database/loadSystemState');    // Load function to retrieve system state in a json format.
@@ -55,7 +52,7 @@ var i2cBoardState = {
 // Async queue manager for changing relay's states and avoid two instruction executing at the same time.
 var changeRelayStateQueue = async.queue(function(task, next){
     I2C.changeRelayState(task.i2cBoardAddr, task.i2cBoardState, function(err){
-        if(err) return console.log(err);
+        if(err) return console.log('Error sending byte: ' + err);
         //console.log("New relay board state is: " + relayBoardState.toString(2));
         return next();    
     });
@@ -92,18 +89,17 @@ var schedulerOffJob = [];
 function jobAutoOn(dev){
     var boardAddr = jsonSystemState[dev].i2cBoardAddr;
     jsonSystemState[dev].switchValue = 1;
-    
+
     var relayMask = 1<<(jsonSystemState[dev].relayID-1);
     i2cBoardState[boardAddr] = i2cBoardState[boardAddr] | relayMask;
-    
+
     var i2CFunctionData = {
         i2cBoardAddr: boardAddr, 
         i2cBoardState: i2cBoardState[boardAddr],
     };
     changeRelayStateQueue.push(i2CFunctionData, function(err){
-        if(err) return console.log(err);
+        if(err) return console.log(timelib.timeNow() + 'Error processing queue element for jobAutoOn(): ' + err);
         console.log(timelib.timeNow() + ' Automatic on: ' + jsonSystemState[dev].name);
-        //console.log("New relay board state is: " + relayBoardState.toString(2));
     });
 
     io.sockets.emit('updateClients', jsonSystemState[dev]);
@@ -116,20 +112,19 @@ function jobAutoOn(dev){
 function jobAutoOff(dev){
     var boardAddr = jsonSystemState[dev].i2cBoardAddr;
     jsonSystemState[dev].switchValue = 0;
-    
+
     var relayMask = 1<<(jsonSystemState[dev].relayID-1);
     i2cBoardState[boardAddr] = i2cBoardState[boardAddr] & (~relayMask);
-    
+
     var i2CFunctionData = {
             i2cBoardAddr: boardAddr, 
             i2cBoardState: i2cBoardState[boardAddr],
     };
     changeRelayStateQueue.push(i2CFunctionData, function(err){
-        if(err) return console.log(err);
+        if(err) return console.log(timelib.timeNow() + 'Error processing queue element for jobAutoOff(): ' + err);
         console.log(timelib.timeNow() + ' Automatic off: ' + jsonSystemState[dev].name);
-        //console.log("New relay board state is: " + relayBoardState.toString(2));
     });
-    
+
     io.sockets.emit('updateClients', jsonSystemState[dev]);
     // Store new values into json file systemState.json
     fs.writeFile(jsonFileName, JSON.stringify(jsonSystemState, null, 4), function(err){
@@ -148,14 +143,13 @@ function socketConnection(socket){
         var disconnectIP = socket.client.conn.remoteAddress;
         console.log(timelib.timeNow() + '  IP ' + disconnectIP + ' disconnected. Clients count: ' + io.eio.clientsCount);
     });
-    
+
     // Control WSN page: client request for system state.
     socket.on('reqSystemState', function(){
         // Send jsonSystemState data (BBB pins and xbees) to client at the beginning of connection.
         socket.emit('respSystemState', jsonSystemState); 
     });
-    
-    
+
     // Vivero control page: listen for changes made by user on browser/client side. Then update system state.
     // Update system state based on clientData values sended by client's browser.
     socket.on('elementChanged', updateSystemState);
@@ -193,39 +187,19 @@ function socketConnection(socket){
                 i2cBoardAddr: boardAddr, 
                 i2cBoardState: i2cBoardState[boardAddr],
             };
-            /*changeRelayStateQueue.push(i2CFunctionData, function(err){
-                if(err) return console.log(err);
+            changeRelayStateQueue.push(i2CFunctionData, function(err){
+                // After processing this element in the queue
+                if(err) return console.log('Error sending byte: ' + err);
                 console.log(timelib.timeNow() + ' ' + newDevState.name + ' turned ' + switchState + '.');
                 //console.log("New relay board state is: " + relayBoardState.toString(2));
-            });*/
-            
-            
-            /*async.waterfall([
-                function(callback){
-                    var i2cBoardState = getRelayBoardState(boardAddr);
-                    callback(null, i2cBoardState);
-                },
-                function(i2cBoardState, callback) {
-                    I2C.changeRelayState(boardAddr, i2cBoardState, function(err){
-                        if(err) return console.log(err);
-                        //console.log("New relay board state is: " + relayBoardState.toString(2));
-                    });
-                    callback(null, 'Done');
-                }],
-                function (err, result) {
-                // result now equals 'done'
-                }
-            );*/
-            
-            I2C.changeRelayState(boardAddr, i2cBoardState[boardAddr], function(err){
-                if(err){
-                    console.log('Error sending byte: ' + err);
-                    return;
-                }
-                //console.log("New relay board state is: " + relayBoardState.toString(2));
             });
-        }
+            
+            /*I2C.changeRelayState(boardAddr, i2cBoardState[boardAddr], function(err){
+                if(err) return console.log('Error sending byte: ' + err);
 
+                console.log("I2C board " + boardAddr + " state is: " + i2cBoardState[boardAddr].toString(2));
+            });*/
+        }
         console.log(timelib.timeNow() + "  Name: " + newDevState.name + 
                     ",  Switch value: " + newDevState.switchValue +
                     ",  AutoMode value: " + newDevState.autoMode +
@@ -308,11 +282,33 @@ var io;     // io = require('socket.io')(server);
 // Third: Initialize socket.io.
 async.series([
     function(callback){
+        console.log('Start devices initialization for I2C board 32');
         i2cBoardState[32] = getRelayBoardState(32);
+        // Restore system to its last state.
+        I2C.changeRelayState(32, i2cBoardState[32], function(err){
+            if(err){
+                console.log(err);
+                return callback(err);
+            }
+            console.log('Initialization complete. I2C board  32 state is: ' + i2cBoardState[32].toString(2));
+            callback(null);
+        });
+    },
+    function(callback){
+        console.log('Start devices initialization for I2C board 33');
         i2cBoardState[33] = getRelayBoardState(33);
-        initDevices(32, i2cBoardState[32], I2C);
-        initDevices(33, i2cBoardState[33], I2C);
-        
+        // Restore system to its last state.
+        I2C.changeRelayState(33, i2cBoardState[33], function(err){
+            if(err){
+                console.log(err);
+                return callback(err);
+            }
+            console.log('Initialization complete. I2C board 33 state is: ' + i2cBoardState[33].toString(2));
+            callback(null);
+        });
+    },
+    function(callback){
+        // Initialize auto on and off schedule.
         for(var dev in jsonSystemState){
            var devState = jsonSystemState[dev];
 
@@ -323,7 +319,7 @@ async.series([
                 // First convert to integer: "02" -> 2. Then convert to string again: 2 -> "2".
                 var hourStr = parseInt(autoOnTimeSplit[0], 10).toString();
                 var minuteStr = parseInt(autoOnTimeSplit[1], 10).toString();
-    
+
                 // Set new scheduler values.
                 var onCronTime = new cronTime('0 ' + minuteStr + ' ' + hourStr + ' * * *', null);
                 schedulerOnJob[dev].setTime(onCronTime);
@@ -339,7 +335,7 @@ async.series([
                 // First convert to integer: "02" -> 2. Then convert to string again: 2 -> "2".
                 var hourStr = parseInt(autoOffTimeSplit[0], 10).toString();
                 var minuteStr = parseInt(autoOffTimeSplit[1], 10).toString();
-    
+
                 // Set new scheduler values.
                 var offCronTime = new cronTime('0 ' + minuteStr + ' ' + hourStr + ' * * *', null);
                 schedulerOffJob[dev].setTime(offCronTime);
@@ -348,7 +344,6 @@ async.series([
                 schedulerOffJob[dev].start();
                 console.log(timelib.timeNow() + ' Set Auto Off to: ' + devState.autoOffTime + ':00' + '  ' + devState.name);
             }
-           
         }
         callback(null);
     },
@@ -373,5 +368,4 @@ async.series([
     function(err){ //This function gets called after all tasks has called its callback functions.
         if(err) return console.error(err);
         console.log(timelib.timeNow() + ' System initialization using async series is complete.');
-    }
-);
+});

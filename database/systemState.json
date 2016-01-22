@@ -5,10 +5,10 @@
         "type": "i2c",
         "i2cBoardAddr": 32,
         "name": "EV 1",
-        "switchValue": 0,
+        "switchValue": 1,
         "autoMode": 1,
-        "autoOnTime": "18:01",
-        "autoOffTime": "19:00"
+        "autoOnTime": "06:01",
+        "autoOffTime": "07:00"
     },
     "dev2": {
         "dev": "dev2",
@@ -18,8 +18,8 @@
         "name": "EV 2",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "19:01",
-        "autoOffTime": "20:00"
+        "autoOnTime": "07:01",
+        "autoOffTime": "08:00"
     },
     "dev3": {
         "dev": "dev3",
@@ -29,8 +29,8 @@
         "name": "EV 3",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "20:01",
-        "autoOffTime": "21:00"
+        "autoOnTime": "08:01",
+        "autoOffTime": "09:00"
     },
     "dev4": {
         "dev": "dev4",
@@ -40,8 +40,8 @@
         "name": "EV 4",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "21:01",
-        "autoOffTime": "22:00"
+        "autoOnTime": "09:01",
+        "autoOffTime": "10:00"
     },
     "dev5": {
         "dev": "dev5",
@@ -51,8 +51,8 @@
         "name": "EV 5",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "22:01",
-        "autoOffTime": "23:00"
+        "autoOnTime": "10:01",
+        "autoOffTime": "11:00"
     },
     "dev6": {
         "dev": "dev6",
@@ -62,8 +62,8 @@
         "name": "EV 6",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "23:01",
-        "autoOffTime": "00:00"
+        "autoOnTime": "11:01",
+        "autoOffTime": "12:00"
     },
     "dev7": {
         "dev": "dev7",
@@ -73,8 +73,8 @@
         "name": "EV 7",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "00:01",
-        "autoOffTime": "01:00"
+        "autoOnTime": "12:50",
+        "autoOffTime": "12:51"
     },
     "dev8": {
         "dev": "dev8",
@@ -84,8 +84,8 @@
         "name": "EV 8",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "01:01",
-        "autoOffTime": "02:00"
+        "autoOnTime": "13:01",
+        "autoOffTime": "14:00"
     },
     "dev9": {
         "dev": "dev9",
@@ -95,7 +95,7 @@
         "name": "EV Principal",
         "switchValue": 0,
         "autoMode": 1,
-        "autoOnTime": "18:00",
-        "autoOffTime": "02:01"
+        "autoOnTime": "06:00",
+        "autoOffTime": "14:01"
     }
 }
